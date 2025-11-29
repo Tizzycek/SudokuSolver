@@ -2,6 +2,7 @@
 #define MAINWINDOW_H
 
 #include <QMainWindow>
+#include <QHBoxLayout>
 
 QT_BEGIN_NAMESPACE
 namespace Ui {
@@ -19,5 +20,12 @@ public:
 
 private:
     Ui::MainWindow *ui;
+    QWidget*centralWidget;
+    QVBoxLayout*mainLayout;
+    //QWidget*lowPanel;
+    //QVBoxLayout*lowLayout;
+
+    QWidget*setupOptionsPanel();
+    QWidget*setupGrid(unsigned short);
 };
 #endif // MAINWINDOW_H
