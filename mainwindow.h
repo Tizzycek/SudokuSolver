@@ -18,12 +18,16 @@ public:
     MainWindow(QWidget *parent = nullptr);
     ~MainWindow();
 
+protected:
+    void resizeEvent(QResizeEvent *event) override;
+
 private:
     Ui::MainWindow *ui;
     QWidget*centralWidget;
     QVBoxLayout*mainLayout;
     //QWidget*lowPanel;
     //QVBoxLayout*lowLayout;
+    QWidget*gridWidget;
 
     QWidget*setupOptionsPanel();
     QWidget*setupGrid(unsigned short);
