@@ -4,6 +4,7 @@
 #include <QPushButton>
 #include <QLineEdit>
 #include <QRegularExpressionValidator>
+#include <QTimer>
 
 MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent)
@@ -12,18 +13,31 @@ MainWindow::MainWindow(QWidget *parent)
     ui->setupUi(this);
 
     setWindowTitle(tr("Sudoku"));
-    setMinimumSize(500, 500);
-    resize(500, 500);
+    setMinimumSize(500, 600);
+    resize(500, 600);
+
+    font = QFont("Arial", 20, QFont::Bold);
 
     centralWidget = new QWidget(this);
     setCentralWidget(centralWidget);
 
     mainLayout = new QVBoxLayout(centralWidget);
 
-    gridWidget = setupGrid(9);
+    // Rimuoviamo i margini del layout principale per sfruttare tutto lo spazio
+    mainLayout->setContentsMargins(0, 0, 0, 0);
+    mainLayout->setSpacing(0);
 
-    mainLayout->addWidget(gridWidget);
-    mainLayout->addWidget(setupOptionsPanel());
+    unsigned short dim = 9;
+    gridWidget = setupGrid(dim);
+    optionPanel = setupOptionsPanel(dim);
+
+    mainLayout->addWidget(gridWidget, 4);
+    mainLayout->addWidget(optionPanel, 1);
+
+    QTimer::singleShot(0, this, [this](){
+        this->resizeGrid(*gridWidget);
+        this->resizeGrid(*numberPad);
+    });
 }
 
 MainWindow::~MainWindow()
@@ -31,21 +45,20 @@ MainWindow::~MainWindow()
     delete ui;
 }
 
-QWidget*MainWindow::setupGrid(unsigned short size){
+QWidget*MainWindow::setupGrid(const unsigned short &size){
     QWidget*gridPanel = new QWidget(this);
     QGridLayout*sudokuGrid = new QGridLayout(gridPanel);
 
     sudokuGrid->setSpacing(0);
+    sudokuGrid->setContentsMargins(0, 0, 0, 0);
     //sudokuGrid->setContentsMargins(20, 20, 20, 20);
     //sudokuGrid->setHorizontalSpacing(10);
     //sudokuGrid->setVerticalSpacing(10);
 
-    for (int i = 0; i < 9; ++i) {
+    for (unsigned short i = 0; i < size; ++i) {
         sudokuGrid->setRowStretch(i, 1);
         sudokuGrid->setColumnStretch(i, 1);
     }
-
-    QFont font("Arial", 20, QFont::Bold);
 
     QRegularExpression rx("^[1-9]$");
     QValidator *validator = new QRegularExpressionValidator(rx);
@@ -63,7 +76,7 @@ QWidget*MainWindow::setupGrid(unsigned short size){
             cell->setValidator(validator);
 
 
-            int temp[size][size];
+            //int temp[size][size];
 
             QString style = "QLineEdit { "
                             "background-color: white; "
@@ -82,7 +95,7 @@ QWidget*MainWindow::setupGrid(unsigned short size){
             cell->setStyleSheet(style);
             sudokuGrid->addWidget(cell, row, col);
             // IMPLEMENTARE E CONTROLLARE
-            temp[row][col] = cell->text().toInt();
+            //temp[row][col] = cell->text().toInt();
         }
     }
 
@@ -93,35 +106,59 @@ void MainWindow::resizeEvent(QResizeEvent *event)  {
     // Chiamiamo l'implementazione base per assicurarci che il widget centrale sia aggiornato
     QMainWindow::resizeEvent(event);
 
-    if (!gridWidget) return;
+    if (!gridWidget || !numberPad) return;
 
     // Otteniamo le dimensioni attuali dell'area di lavoro
-    QSize size = gridWidget->size();
-
-    // Troviamo il lato più corto (es. se la finestra è 800x600, il lato è 600)
-    int lato = qMin(size.width(), size.height());
-
-    // Calcoliamo quanto spazio vuoto lasciare ai lati per centrare il quadrato
-    int margineX = (size.width() - lato) / 2;
-    int margineY = (size.height() - lato) / 2;
-
-    // Applichiamo questi margini al layout.
-    // Aggiungiamo +10 pixel extra per non far toccare mai il bordo finestra
-    mainLayout->setContentsMargins(margineX + 10, margineY + 10, margineX + 10, margineY + 10);
+    resizeGrid(*gridWidget);
+    resizeGrid(*numberPad);
 }
 
-QWidget*MainWindow::setupOptionsPanel(){
-    QWidget*lowPanel = new QWidget(this);
-    QVBoxLayout*lowLayout = new QVBoxLayout(lowPanel);
+// Cambiamo il tipo di ritorno da QGridLayout* a QWidget*
+QWidget* MainWindow::setupNumberPad(const unsigned short &size)
+{
+    // Creiamo un widget che farà da contenitore (Wrapper)
+    QWidget* padContainer = new QWidget();
 
-    QGridLayout *numberPad = new QGridLayout;
-    for (int i = 1; i <= 9; ++i) {
-        QPushButton *numBtn = new QPushButton(QString::number(i));
-        numBtn->setFixedSize(40, 40);
-        numberPad->addWidget(numBtn, (i-1)/3, (i-1)%3);
+    // Creiamo il layout e lo assegniamo al contenitore
+    QGridLayout* padLayout = new QGridLayout(padContainer);
+
+    padLayout->setSpacing(0);
+    // Fondamentale: margini a 0 così resizeGrid ha il controllo totale
+    padLayout->setContentsMargins(0, 0, 0, 0);
+
+    for (unsigned short i = 0; i < size; ++i) {
+        padLayout->setRowStretch(i, 1);
+        padLayout->setColumnStretch(i, 1);
     }
 
-    lowLayout->addLayout(numberPad);
+    for (unsigned short i = 1; i <= size; ++i) {
+        QPushButton *numBtn = new QPushButton(QString::number(i));
+
+        numBtn->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
+        numBtn->setMinimumSize(30, 30);
+        numBtn->setFont(font);
+
+        // Aggiungiamo al layout (che è dentro padContainer)
+        padLayout->addWidget(numBtn, (i-1)/3, (i-1)%3);
+    }
+
+    // Restituiamo il contenitore, non il layout
+    return padContainer;
+}
+
+QWidget* MainWindow::setupOptionsPanel(const unsigned short &size){
+    QWidget* lowPanel = new QWidget(this);
+    QVBoxLayout* lowLayout = new QVBoxLayout(lowPanel);
+
+    // Allineamento e margini per il pannello opzioni
+    lowLayout->setContentsMargins(0, 10, 0, 10);
+    lowLayout->setAlignment(Qt::AlignCenter);
+
+    // numberPad ora è un QWidget*, creato dalla funzione modificata
+    numberPad = setupNumberPad(size);
+
+    // Usiamo addWidget invece di addLayout
+    lowLayout->addWidget(numberPad);
 
     return lowPanel;
 }

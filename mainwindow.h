@@ -4,6 +4,7 @@
 #include <QMainWindow>
 #include <QHBoxLayout>
 
+
 QT_BEGIN_NAMESPACE
 namespace Ui {
 class MainWindow;
@@ -25,11 +26,22 @@ private:
     Ui::MainWindow *ui;
     QWidget*centralWidget;
     QVBoxLayout*mainLayout;
-    //QWidget*lowPanel;
-    //QVBoxLayout*lowLayout;
-    QWidget*gridWidget;
 
-    QWidget*setupOptionsPanel();
-    QWidget*setupGrid(unsigned short);
+    QFont font;
+
+    QWidget*gridWidget;
+    QWidget*optionPanel;
+    QWidget*numberPad;
+
+    QWidget*setupGrid(const unsigned short&);
+
+    template <class T>
+    void resizeGrid(T&);
+
+    QWidget*setupOptionsPanel(const unsigned short&);
+    QWidget*setupNumberPad(const unsigned short &);
 };
+
+#include "resizer.tpp"
+
 #endif // MAINWINDOW_H
