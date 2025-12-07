@@ -3,6 +3,9 @@
 
 #include <QMainWindow>
 #include <QHBoxLayout>
+#include <QVector>
+#include <qlineedit.h>
+#include "libs/SudokuSolverAlgorithm.h"
 
 
 QT_BEGIN_NAMESPACE
@@ -27,6 +30,11 @@ private:
     QWidget*centralWidget;
     QVBoxLayout*mainLayout;
 
+    QVector<QVector<QLineEdit*>> cells;
+    SudokuSolverAlgorithm*solver;
+
+    unsigned short dim;
+
     QFont font;
 
     QWidget*gridWidget;
@@ -40,6 +48,12 @@ private:
 
     QWidget*setupOptionsPanel(const unsigned short&);
     QWidget*setupNumberPad(const unsigned short &);
+    QWidget*setupButtons();
+
+    void askResetCells();
+    void resetCells();
+    void askSolve();
+
 };
 
 #include "resizer.tpp"

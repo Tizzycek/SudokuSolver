@@ -13,9 +13,7 @@ qt_add_executable(SudokuSolver
     mainwindow.ui
     resizer.tpp
     mainwindow.cpp
-
-
-
+    libs/SudokuSolverAlgorithm.h
 )
 
 qt_add_translations(
@@ -23,10 +21,18 @@ qt_add_translations(
     TS_FILES SudokuSolver_it_IT.ts
 )
 
+# Aggiungi libreria
+add_library(libSudokuSolverAlgorithm SHARED IMPORTED)
+set_target_properties(libSudokuSolverAlgorithm PROPERTIES
+    IMPORTED_LOCATION ${CMAKE_SOURCE_DIR}/libs/libSudokuSolverAlgorithm.dll
+    IMPORTED_IMPLIB ${CMAKE_SOURCE_DIR}/libs/libSudokuSolverAlgorithm.dll.a
+)
+
 target_link_libraries(SudokuSolver
     PRIVATE
         Qt::Core
         Qt::Widgets
+        libSudokuSolverAlgorithm
 )
 
 include(GNUInstallDirs)
@@ -43,3 +49,12 @@ qt_generate_deploy_app_script(
     NO_UNSUPPORTED_PLATFORM_ERROR
 )
 install(SCRIPT ${deploy_script})
+
+# Copia DLL (Windows)
+if(WIN32)
+    add_custom_command(TARGET SudokuSolver POST_BUILD
+        COMMAND ${CMAKE_COMMAND} -E copy
+        ${CMAKE_SOURCE_DIR}/libs/libSudokuSolverAlgorithm.dll
+        $<TARGET_FILE_DIR:SudokuSolver>
+    )
+endif()
