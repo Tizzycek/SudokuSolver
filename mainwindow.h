@@ -29,6 +29,10 @@ private:
     Ui::MainWindow *ui;
     QWidget*centralWidget;
     QVBoxLayout*mainLayout;
+    QLineEdit* currentCell = nullptr;
+
+    QThread* solverThread = nullptr;    // puntatore al thread del solver
+    unsigned long lastCoordsSize = 0;             // ultima dimensione letta di coords
 
     QVector<QVector<QLineEdit*>> cells;
     SudokuSolverAlgorithm*solver;
@@ -53,6 +57,11 @@ private:
     void askResetCells();
     void resetCells();
     void askSolve();
+    void solveSequence();
+    void startProgressMonitor();
+
+private slots:
+    void handleCellInput(int row, int col, const QString &text);
 
 };
 

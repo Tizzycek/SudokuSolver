@@ -1,4 +1,5 @@
 #include "mainwindow.h"
+#include "solverworker.h"
 #include "ui_mainwindow.h"
 
 #include <QPushButton>
@@ -6,7 +7,8 @@
 #include <QRegularExpressionValidator>
 #include <QTimer>
 #include <QMessageBox>
-#include <QResizeEvent> // Necessario per usare QResizeEvent nel costruttore
+#include <QResizeEvent>
+#include <QThread>
 
 MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent)
@@ -53,6 +55,7 @@ MainWindow::MainWindow(QWidget *parent)
 
 MainWindow::~MainWindow()
 {
+    delete solver;
     delete ui;
 }
 
@@ -82,6 +85,25 @@ QWidget* MainWindow::setupGrid(const unsigned short &size){
             cell->setFont(font);
             cell->setValidator(validator);
 
+            // --- CONNESSIONE PER INPUT DA TASTIERA ---
+            // Quando il testo è modificato (dopo la validazione), chiamiamo la funzione di gestione
+            connect(cell, &QLineEdit::textEdited, this, [this, row, col](const QString &text) {
+                this->handleCellInput(row, col, text);
+            });
+
+            // --- CONNESSIONE PER TRACCIARE LA SELEZIONE ---
+            // Quando la cella ottiene il focus
+            connect(cell, &QLineEdit::editingFinished, this, [this, cell](){
+                // Usiamo editingFinished come un modo per reagire dopo che la cella perde il focus,
+                // ma per tracciare la selezione usiamo focusInEvent se fosse disponibile.
+                // Per la semplicità di un QLineEdit, basta tracciare quale ha il focus.
+            });
+
+            //connect(cell, &QLineEdit::textChanged, this, [this, row, col](const QString &text){});
+            // Per tracciare la cella selezionata, usiamo un Event Filter (vedi nota sotto)
+            // o sovrascriviamo l'evento, ma qui usiamo l'event filter più semplice.
+            cell->installEventFilter(this);
+
             QString style = "QLineEdit { "
                             "background-color: white; "
                             "border: 1px solid #c0c0c0; "
@@ -99,15 +121,44 @@ QWidget* MainWindow::setupGrid(const unsigned short &size){
             sudokuGrid->addWidget(cell, row, col);
 
             cells[row][col] = cell;
-            if (solver) {
-                // Controllo per evitare crash se il testo è vuoto o solver non inizializzato
-                // (Anche se all'inizio è vuoto, è buona norma)
-                unsigned short val = cell->text().toUShort();
-                if(val > 0) solver->insert(val, row, col);
-            }
+
+            solver->insert(cell->text().toUShort(), row, col);
         }
     }
     return gridPanel;
+}
+
+// --- Funzione per tracciare la cella selezionata ---
+/*bool MainWindow::eventFilter(QObject *watched, QEvent *event) {
+    if (event->type() == QEvent::FocusIn) {
+        QLineEdit* cell = qobject_cast<QLineEdit*>(watched);
+        if (cell && cell->parentWidget() == gridWidget) { // Assicurati che sia una cella della griglia
+            currentCell = cell;
+            qDebug() << "Cella selezionata: (" << cell->property("row").toInt() << ", " << cell->property("col").toInt() << ")";
+        }
+        solver->printGrid();
+    }
+    return QMainWindow::eventFilter(watched, event);
+}*/
+
+
+// --- GESTIONE INPUT DA TASTIERA ---
+void MainWindow::handleCellInput(int row, int col, const QString &text) {
+    unsigned short val = text.isEmpty() ? 0 : text.toUShort();
+
+    if (val == 0) {
+        solver->clean(row, col);
+    } else {
+        if (solver->isSafe(row, col, val)){
+            solver->insert(val, row, col);
+            cells[row][col]->setStyleSheet(cells[row][col]->styleSheet() + "color: black;"); // Colore per input utente
+        } else {
+            QMessageBox::warning(this, "Errore", QString("Il numero %1 non è valido in posizione (%2, %3).").arg(val).arg(row+1).arg(col+1));
+            cells[row][col]->clear();
+        }
+    }
+    // Esegui la stampa della griglia del solver per debug
+    // solver->printGrid();
 }
 
 // --- QUESTA È LA FUNZIONE CHIAVE PER L'ALLINEAMENTO ---
@@ -227,6 +278,7 @@ void MainWindow::resetCells(){
             }
         }
     }
+    solver->clean();
 }
 
 void MainWindow::askSolve(){
@@ -234,13 +286,84 @@ void MainWindow::askSolve(){
                                                               "Risolvere il sudoku?",
                                                               QMessageBox::Yes | QMessageBox::No);
     if (reply == QMessageBox::Yes) {
-        QMessageBox msgBox;
-        msgBox.setWindowTitle("Error");
-        msgBox.setText("To be implemented!");
-        msgBox.setIcon(QMessageBox::Critical);
-        msgBox.setStandardButtons(QMessageBox::Ok);
-        msgBox.button(QMessageBox::Ok)->setText("Abort");
-        msgBox.exec();
-        // abort(); // Commentato perché abort() chiude brutalmente il programma
+        solveSequence();
     }
+}
+
+void MainWindow::solveSequence()
+{
+    for (int i = 0; i < dim; i++)
+        for (int j = 0; j < dim; j++)
+            cells[i][j]->setReadOnly(true);
+
+    QThread* thread = new QThread;
+    SolverWorker* worker = new SolverWorker(solver);
+
+    worker->moveToThread(thread);
+
+    connect(thread, &QThread::started, worker, &SolverWorker::run);
+
+    // quando la solve termina
+    connect(worker, &SolverWorker::finished,
+            this, [=](bool ok){
+                qDebug() << "Solver terminato, risultato:" << ok;
+
+                // aggiorna griglia completa
+                for (int r = 0; r < dim; ++r)
+                    for (int c = 0; c < dim; ++c)
+                        cells[r][c]->setText(QString::number(solver->get(r, c)));
+
+                // sblocca GUI
+                for (int r = 0; r < dim; ++r)
+                    for (int c = 0; c < dim; ++c)
+                        cells[r][c]->setReadOnly(false);
+
+                // pulizia thread/worker
+                thread->quit();
+                thread->wait();
+
+                worker->deleteLater();
+                thread->deleteLater();
+
+                // reset stato in MainWindow
+                solverThread = nullptr;
+                lastCoordsSize = 0;
+            });
+
+    // salva il thread nel membro e avvialo
+    solverThread = thread;
+    thread->start();
+
+    // avvia monitor (usa lastCoordsSize membro, viene azzerato all'inizio)
+    startProgressMonitor();
+}
+
+
+void MainWindow::startProgressMonitor()
+{
+    // usa il membro lastCoordsSize (non statico), così si resetta tra esecuzioni
+    QTimer* timer = new QTimer(this);
+
+    connect(timer, &QTimer::timeout, this, [this, timer]() {
+        int size = solver->coordsSize();
+
+
+        if (size > lastCoordsSize) {
+            for (int k = lastCoordsSize; k < size; ++k) {
+                auto [r, c] = solver->coordAt(k);
+                int v = solver->get(r, c);
+                cells[r][c]->setText(QString::number(v));
+                qDebug() << "Aggiornata cella:" << r << c << " = " << v;
+            }
+            lastCoordsSize = size;
+        }
+
+        // Se il thread è nullo o non è in esecuzione, fermiamo il timer
+        if (!solverThread || !solverThread->isRunning()) {
+            timer->stop();
+            timer->deleteLater();
+        }
+    });
+
+    timer->start(100); // ogni 100 ms (regola come preferisci)
 }

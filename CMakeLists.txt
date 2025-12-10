@@ -2,6 +2,7 @@ cmake_minimum_required(VERSION 3.19)
 project(SudokuSolver LANGUAGES CXX)
 
 find_package(Qt6 6.5 REQUIRED COMPONENTS Core Widgets LinguistTools)
+find_package(Qt6 REQUIRED COMPONENTS Core)
 
 qt_standard_project_setup()
 
@@ -14,6 +15,8 @@ qt_add_executable(SudokuSolver
     resizer.tpp
     mainwindow.cpp
     libs/SudokuSolverAlgorithm.h
+    solverworker.h solverworker.cpp
+
 )
 
 qt_add_translations(
@@ -34,6 +37,7 @@ target_link_libraries(SudokuSolver
         Qt::Widgets
         libSudokuSolverAlgorithm
 )
+target_link_libraries(SudokuSolver PRIVATE Qt6::Core)
 
 include(GNUInstallDirs)
 
