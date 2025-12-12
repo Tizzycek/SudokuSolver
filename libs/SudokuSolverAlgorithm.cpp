@@ -142,16 +142,16 @@ bool SudokuSolverAlgorithm::checkAll() const {
 }
 
 size_t SudokuSolverAlgorithm::coordsSize() const {
-    std::lock_guard<std::mutex> lock(coordsMutex);
+    std::lock_guard<std::mutex> guard(coordsMutex);
     return coords.size();
 }
 
 std::pair<unsigned short, unsigned short> SudokuSolverAlgorithm::coordAt(size_t i) const {
-    std::lock_guard<std::mutex> lock(coordsMutex);
-    return coords[i];
+    std::lock_guard<std::mutex> guard(coordsMutex);
+    return coords.at(i);
 }
 
 void SudokuSolverAlgorithm::pushCoord(unsigned short r, unsigned short c) {
-    std::lock_guard<std::mutex> lock(coordsMutex);
+    std::lock_guard<std::mutex> guard(coordsMutex);
     coords.emplace_back(r, c);
 }
