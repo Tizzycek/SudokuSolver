@@ -29,7 +29,7 @@ private:
     Ui::MainWindow *ui;
     QWidget*centralWidget;
     QVBoxLayout*mainLayout;
-    QLineEdit* currentCell = nullptr;
+    QLineEdit* selectedCell = nullptr;
 
     QThread* solverThread = nullptr;    // puntatore al thread del solver
     unsigned long lastCoordsSize = 0;             // ultima dimensione letta di coords
@@ -47,6 +47,8 @@ private:
 
     QWidget*setupGrid(const unsigned short&);
 
+    QGridLayout* numberPadLayout;
+
     template <class T>
     void resizeGrid(T&);
 
@@ -54,11 +56,14 @@ private:
     QWidget*setupNumberPad(const unsigned short &);
     QWidget*setupButtons();
 
+    bool eventFilter(QObject *watched, QEvent *event) override;
+
     void askResetCells();
     void resetCells();
     void askSolve();
     void solveSequence();
     void startProgressMonitor();
+    void handleNumberPadInput(unsigned short val);
 
 private slots:
     void handleCellInput(int row, int col, const QString &text);

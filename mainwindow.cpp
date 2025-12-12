@@ -21,7 +21,7 @@ MainWindow::MainWindow(QWidget *parent)
     setMinimumSize(600, 700);
     resize(600, 700);
 
-    font = QFont("Arial", 20, QFont::Bold);
+    font = QFont("Arial", 22, QFont::Bold);
 
     centralWidget = new QWidget(this);
     setCentralWidget(centralWidget);
@@ -85,6 +85,9 @@ QWidget* MainWindow::setupGrid(const unsigned short &size){
             cell->setFont(font);
             cell->setValidator(validator);
 
+            cell->setProperty("row", row);
+            cell->setProperty("col", col);
+
             // --- CONNESSIONE PER INPUT DA TASTIERA ---
             // Quando il testo è modificato (dopo la validazione), chiamiamo la funzione di gestione
             connect(cell, &QLineEdit::textEdited, this, [this, row, col](const QString &text) {
@@ -129,17 +132,68 @@ QWidget* MainWindow::setupGrid(const unsigned short &size){
 }
 
 // --- Funzione per tracciare la cella selezionata ---
-/*bool MainWindow::eventFilter(QObject *watched, QEvent *event) {
-    if (event->type() == QEvent::FocusIn) {
-        QLineEdit* cell = qobject_cast<QLineEdit*>(watched);
-        if (cell && cell->parentWidget() == gridWidget) { // Assicurati che sia una cella della griglia
-            currentCell = cell;
-            qDebug() << "Cella selezionata: (" << cell->property("row").toInt() << ", " << cell->property("col").toInt() << ")";
+bool MainWindow::eventFilter(QObject *watched, QEvent *event) {
+    if (event->type() == QEvent::KeyPress) {
+
+        QKeyEvent* keyEvent = static_cast<QKeyEvent*>(event);
+        QLineEdit* edit = qobject_cast<QLineEdit*>(watched);
+
+        if (!edit) return false;
+
+        // Quando la cella riceve il focus (es. click o tab), la ricordiamo
+        if (event->type() == QEvent::FocusIn) {
+            selectedCell = edit;
+            return QMainWindow::eventFilter(watched, event); // lascia comportamento di default
         }
-        solver->printGrid();
+
+        // Quando la cella viene cliccata con il mouse, impostiamo selectedCell (ridondante con FocusIn)
+        if (event->type() == QEvent::MouseButtonPress) {
+            selectedCell = edit;
+            return QMainWindow::eventFilter(watched, event);
+        }
+
+        int r = edit->property("row").toInt();
+        int c = edit->property("col").toInt();
+
+        selectedCell = edit;
+
+        switch (keyEvent->key()) {
+
+        case Qt::Key_Left:
+            if (c > 0){
+                selectedCell = cells[r][c-1];
+                cells[r][c-1]->setFocus();
+            }
+            return true;
+
+        case Qt::Key_Right:
+            if (c < dim-1){
+                cells[r][c+1]->setFocus();
+                selectedCell = cells[r][c+1];
+            }
+            return true;
+
+        case Qt::Key_Up:
+            if (r > 0){
+                cells[r-1][c]->setFocus();
+                selectedCell = cells[r-1][c];
+            }
+            return true;
+
+        case Qt::Key_Down:
+            if (r < dim-1){
+                cells[r+1][c]->setFocus();
+                selectedCell = cells[r+1][c];
+            }
+            return true;
+
+        default:
+            return false;
+        }
     }
-    return QMainWindow::eventFilter(watched, event);
-}*/
+
+    return false;
+}
 
 
 // --- GESTIONE INPUT DA TASTIERA ---
@@ -203,9 +257,12 @@ QWidget* MainWindow::setupNumberPad(const unsigned short &size)
 
     for (unsigned short i = 1; i <= size; ++i) {
         QPushButton *numBtn = new QPushButton(QString::number(i));
+        connect(numBtn, &QPushButton::clicked, this, [this, i]() {
+            this->handleNumberPadInput(i);
+        });
         numBtn->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
         numBtn->setMinimumSize(30, 30);
-        numBtn->setFont(font);
+        //numBtn->setFont(font);
         padLayout->addWidget(numBtn, (i-1)/3, (i-1)%3);
     }
     return padContainer;
@@ -328,6 +385,11 @@ void MainWindow::solveSequence()
                 // reset stato in MainWindow
                 solverThread = nullptr;
                 lastCoordsSize = 0;
+
+                if (ok)
+                    QMessageBox::information(this, "Completato", "Sudoku risolto");
+                else
+                    QMessageBox::critical(this, "Errore", "Il sudoku non è stato risolto");
             });
 
     // salva il thread nel membro e avvialo
@@ -366,4 +428,52 @@ void MainWindow::startProgressMonitor()
     });
 
     timer->start(100); // ogni 100 ms (regola come preferisci)
+}
+
+void MainWindow::handleNumberPadInput(unsigned short val)
+{
+    // Se non c'è una cella selezionata, proviamo a selezionare la prima con il focus
+    if (!selectedCell) {
+        QWidget *fw = QApplication::focusWidget();
+        QLineEdit *fe = qobject_cast<QLineEdit*>(fw);
+        if (fe) selectedCell = fe;
+    }
+
+    if (!selectedCell) return;  // ancora nulla
+
+    // Mettiamo il focus (assicura che la cella sia attiva)
+    selectedCell->setFocus();
+
+    unsigned short row = selectedCell->property("row").toInt();
+    unsigned short col = selectedCell->property("col").toInt();
+
+    QString s = QString::number(val);
+
+    // Aggiorna GUI (attenzione: setText NON emette textEdited, perciò gestiamo l'inserimento qui)
+    selectedCell->setText(s);
+
+    // Aggiorna solver (stessa logica che usi in handleCellInput)
+    if (solver->isSafe(row, col, val)) {
+        solver->insert(val, row, col);
+        // evidenziamo come valore utente
+        selectedCell->setStyleSheet(selectedCell->styleSheet() + "color: black;");
+    } else {
+        QMessageBox::warning(this, "Errore",
+                             QString("Il numero %1 non è valido in posizione (%2, %3).")
+                                 .arg(val).arg(row+1).arg(col+1));
+        selectedCell->clear();
+        return;
+    }
+
+    // Opzionale: sposta il focus in avanti
+    unsigned short nextCol = col + 1;
+    unsigned short nextRow = row;
+    if (nextCol >= dim) {
+        nextCol = 0;
+        nextRow = row + 1;
+    }
+    if (nextRow < dim) {
+        cells[nextRow][nextCol]->setFocus();
+        selectedCell = cells[nextRow][nextCol];
+    }
 }

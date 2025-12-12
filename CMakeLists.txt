@@ -14,7 +14,7 @@ qt_add_executable(SudokuSolver
     mainwindow.ui
     resizer.tpp
     mainwindow.cpp
-    libs/SudokuSolverAlgorithm.h
+
     solverworker.h solverworker.cpp
 
 )
@@ -25,11 +25,13 @@ qt_add_translations(
 )
 
 # Aggiungi libreria
-add_library(libSudokuSolverAlgorithm SHARED IMPORTED)
-set_target_properties(libSudokuSolverAlgorithm PROPERTIES
-    IMPORTED_LOCATION ${CMAKE_SOURCE_DIR}/libs/libSudokuSolverAlgorithm.dll
-    IMPORTED_IMPLIB ${CMAKE_SOURCE_DIR}/libs/libSudokuSolverAlgorithm.dll.a
-)
+#add_library(libSudokuSolverAlgorithm SHARED IMPORTED)
+#set_target_properties(libSudokuSolverAlgorithm PROPERTIES
+#    IMPORTED_LOCATION ${CMAKE_SOURCE_DIR}/libs/libSudokuSolverAlgorithm.dll
+#    IMPORTED_IMPLIB ${CMAKE_SOURCE_DIR}/libs/libSudokuSolverAlgorithm.dll.a
+#)
+add_library(libSudokuSolverAlgorithm SHARED ${CMAKE_SOURCE_DIR}/libs/SudokuSolverAlgorithm.cpp
+    libs/SudokuSolverAlgorithm.h)
 
 target_link_libraries(SudokuSolver
     PRIVATE
