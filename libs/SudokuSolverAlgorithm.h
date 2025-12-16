@@ -135,6 +135,14 @@ private:
      */
     void pushCoord(unsigned short r, unsigned short c);
 
+    /**
+     * @brief Clears the solver progress buffer (thread-safe).
+     *
+     * Call this before starting a new solve to avoid unbounded growth of
+     * the `coords` vector across multiple runs.
+     */
+    void clearProgress();
+
 
 private:
     /**

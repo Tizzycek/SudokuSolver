@@ -48,6 +48,10 @@ protected:
      * @param event Resize event delivered by Qt.
      */
     void resizeEvent(QResizeEvent *event) override;
+    /**
+     * @brief Ensures background solver thread is terminated before the window closes.
+     */
+    void closeEvent(QCloseEvent* event) override;
 
 private slots:
     // Slots

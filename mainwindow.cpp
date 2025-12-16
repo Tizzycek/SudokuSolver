@@ -9,6 +9,7 @@
 #include <QMessageBox>
 #include <QResizeEvent>
 #include <QThread>
+#include <QCloseEvent>
 
 MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent)
@@ -17,7 +18,7 @@ MainWindow::MainWindow(QWidget *parent)
 {
     ui->setupUi(this);
 
-    setWindowTitle(tr("Sudoku"));
+    setWindowTitle("SudokuSolver");
     setMinimumSize(600, 700);
     resize(600, 700);
 
@@ -57,6 +58,21 @@ MainWindow::~MainWindow()
 {
     delete solver;
     delete ui;
+}
+
+// Ensure background thread is stopped on window close
+void MainWindow::closeEvent(QCloseEvent* event)
+{
+    if (solverThread) {
+        // Request the worker thread event loop to stop and wait for it
+        if (solverThread->isRunning()) {
+            solverThread->quit();
+            solverThread->wait();
+        }
+        solverThread->deleteLater();
+        solverThread = nullptr;
+    }
+    QMainWindow::closeEvent(event);
 }
 
 // === Overridden Qt events ===
@@ -162,7 +178,7 @@ void MainWindow::handleCellInput(unsigned short row, unsigned short col, const Q
             solver->insert(val, row, col);
             cells[row][col]->setStyleSheet(cells[row][col]->styleSheet() + "color: black;"); // Colore per input utente
         } else {
-            QMessageBox::warning(this, "Errore", QString("Il numero %1 non è valido in posizione (%2, %3).").arg(val).arg(row+1).arg(col+1));
+            QMessageBox::warning(this, tr("Errore"), QString(tr("Il numero %1 non è valido in posizione (%2, %3).")).arg(val).arg(row+1).arg(col+1));
             cells[row][col]->clear();
         }
     }
@@ -302,7 +318,7 @@ QWidget* MainWindow::setupButtons(){
     // Togliendo l'allineamento forzato, i pulsanti si espanderanno orizzontalmente
     // per riempire tutto lo spazio concesso dal layout padre (che è limitato dai margini).
 
-    QPushButton* reset = new QPushButton("Ripristina");
+    QPushButton* reset = new QPushButton(tr("Ripristina"));
     reset->setFont(QFont("Arial", 14));
     reset->setMinimumHeight(50);
     reset->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Fixed); // Espanditi in larghezza
@@ -310,7 +326,7 @@ QWidget* MainWindow::setupButtons(){
     btnLayout->addWidget(reset);
     connect(reset, &QPushButton::clicked, this, &MainWindow::askResetCells);
 
-    QPushButton* solve = new QPushButton("Risolvi");
+    QPushButton* solve = new QPushButton(tr("Risolvi"));
     solve->setFont(QFont("Arial", 14));
     solve->setMinimumHeight(50);
     solve->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Fixed);
@@ -323,8 +339,8 @@ QWidget* MainWindow::setupButtons(){
 
 // === Actions / handlers ===
 void MainWindow::askResetCells(){
-    QMessageBox::StandardButton reply = QMessageBox::warning(this, "Attenzione",
-                                                             "Ripristinare tutta la griglia?",
+    QMessageBox::StandardButton reply = QMessageBox::warning(this, tr("Attenzione"),
+                                                             tr("Ripristinare tutta la griglia?"),
                                                              QMessageBox::Yes | QMessageBox::No);
     if (reply == QMessageBox::Yes) {
         resetCells();
@@ -343,8 +359,8 @@ void MainWindow::resetCells(){
 }
 
 void MainWindow::askSolve(){
-    QMessageBox::StandardButton reply = QMessageBox::question(this, "Risolvi",
-                                                              "Risolvere il sudoku?",
+    QMessageBox::StandardButton reply = QMessageBox::question(this, tr("Risolvi"),
+                                                              tr("Risolvere il sudoku?"),
                                                               QMessageBox::Yes | QMessageBox::No);
     if (reply == QMessageBox::Yes) {
         solveSequence();
@@ -353,6 +369,10 @@ void MainWindow::askSolve(){
 
 void MainWindow::solveSequence()
 {
+    // Prepare progress tracking for a new run
+    lastCoordsSize = 0;
+    if (solver) solver->clearProgress();
+
     for (unsigned short i = 0; i < dim; i++)
         for (unsigned short j = 0; j < dim; j++)
             cells[i][j]->setReadOnly(true);
@@ -361,6 +381,10 @@ void MainWindow::solveSequence()
     SolverWorker* worker = new SolverWorker(solver);
 
     worker->moveToThread(thread);
+
+    // Ensure cleanup regardless of success path
+    connect(thread, &QThread::finished, worker, &QObject::deleteLater);
+    connect(thread, &QThread::finished, thread, &QObject::deleteLater);
 
     connect(thread, &QThread::started, worker, &SolverWorker::run);
 
@@ -391,9 +415,9 @@ void MainWindow::solveSequence()
                 lastCoordsSize = 0;
 
                 if (ok)
-                    QMessageBox::information(this, "Completato", "Sudoku risolto");
+                    QMessageBox::information(this, tr("Completato"), tr("Sudoku risolto"));
                 else
-                    QMessageBox::critical(this, "Errore", "Il sudoku non è stato risolto");
+                    QMessageBox::critical(this, tr("Errore"), tr("Il sudoku non è stato risolto"));
             });
 
     // salva il thread nel membro e avvialo
@@ -461,8 +485,8 @@ void MainWindow::handleNumberPadInput(unsigned short val)
         // evidenziamo come valore utente
         selectedCell->setStyleSheet(selectedCell->styleSheet() + "color: black;");
     } else {
-        QMessageBox::warning(this, "Errore",
-                             QString("Il numero %1 non è valido in posizione (%2, %3).")
+        QMessageBox::warning(this, tr("Errore"),
+                             QString(tr("Il numero %1 non è valido in posizione (%2, %3)."))
                                  .arg(val).arg(row+1).arg(col+1));
         selectedCell->clear();
         return;

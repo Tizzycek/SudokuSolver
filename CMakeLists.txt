@@ -6,14 +6,14 @@ project(SudokuSolver LANGUAGES CXX)
 # CMAKE_AUTOMOC ON: Abilita il Meta-Object Compiler (MOC)
 # CMAKE_AUTOUIC ON: Abilita lo User Interface Compiler (UIC) per i file .ui
 # CMAKE_AUTORCC ON: Abilita il Resource Compiler (RCC) per i file .qrc
-set(CMAKE_AUTOMOC ON)
-set(CMAKE_AUTOUIC ON)
-set(CMAKE_AUTORCC ON)
-set(CMAKE_INCLUDE_CURRENT_DIR ON) # Aggiunge la directory corrente ai percorsi di include
+#set(CMAKE_AUTOMOC ON)
+#set(CMAKE_AUTOUIC ON)
+#set(CMAKE_AUTORCC ON)
+#set(CMAKE_INCLUDE_CURRENT_DIR ON) # Aggiunge la directory corrente ai percorsi di include
 
 # Specifica il percorso della configurazione di Qt
 # DEVI cambiare il percorso in base alla tua installazione di Qt!
-set(CMAKE_PREFIX_PATH "F:/Qt/6.10.0/mingw_64/lib/cmake")
+#set(CMAKE_PREFIX_PATH "F:/Qt/6.10.0/mingw_64/lib/cmake")
 
 find_package(Qt6 6.5 REQUIRED COMPONENTS Core Widgets LinguistTools)
 find_package(Qt6 REQUIRED COMPONENTS Core)
@@ -35,7 +35,7 @@ qt_add_executable(SudokuSolver
 
 qt_add_translations(
     TARGETS SudokuSolver
-    TS_FILES SudokuSolver_it_IT.ts
+    TS_FILES translations/SudokuSolver_it_IT.ts
 )
 
 # Aggiungi libreria

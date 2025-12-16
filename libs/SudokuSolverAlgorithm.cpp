@@ -155,3 +155,9 @@ void SudokuSolverAlgorithm::pushCoord(unsigned short r, unsigned short c) {
     std::lock_guard<std::mutex> guard(coordsMutex);
     coords.emplace_back(r, c);
 }
+
+void SudokuSolverAlgorithm::clearProgress() {
+    std::lock_guard<std::mutex> guard(coordsMutex);
+    coords.clear();
+    coords.shrink_to_fit();
+}
