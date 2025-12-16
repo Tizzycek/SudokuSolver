@@ -35,7 +35,7 @@ MainWindow::MainWindow(QWidget *parent)
     solver = new SudokuSolverAlgorithm(dim);
 
     cells.resize(dim);
-    for(int i=0; i<dim; ++i) cells[i].resize(dim);
+    for(unsigned short i=0; i<dim; ++i) cells[i].resize(dim);
 
     gridWidget = setupGrid(dim);
     optionPanel = setupOptionsPanel(dim);
@@ -48,7 +48,7 @@ MainWindow::MainWindow(QWidget *parent)
     QTimer::singleShot(0, this, [this](){
         // Invece di chiamare resizeGrid, lanciamo un evento di resize
         // così la logica centralizzata in resizeEvent viene eseguita.
-        QResizeEvent *event = new QResizeEvent(this->size(), QSize());
+        auto *event = new QResizeEvent(this->size(), QSize());
         QCoreApplication::postEvent(this, event);
     });
 }
@@ -59,76 +59,31 @@ MainWindow::~MainWindow()
     delete ui;
 }
 
-QWidget* MainWindow::setupGrid(const unsigned short &size){
-    QWidget* gridPanel = new QWidget(this);
-    QGridLayout* sudokuGrid = new QGridLayout(gridPanel);
+// === Overridden Qt events ===
+// --- QUESTA È LA FUNZIONE CHIAVE PER L'ALLINEAMENTO ---
+void MainWindow::resizeEvent(QResizeEvent *event)  {
+    QMainWindow::resizeEvent(event);
+    if (!gridWidget || !optionPanel) return;
 
-    sudokuGrid->setSpacing(0);
-    sudokuGrid->setContentsMargins(0, 0, 0, 0);
+    // 1. Calcoliamo la geometria quadrata basandoci SOLO sulla griglia (Master)
+    QSize gSize = gridWidget->size();
+    int lato = qMin(gSize.width(), gSize.height());
 
-    for (unsigned short i = 0; i < size; ++i) {
-        sudokuGrid->setRowStretch(i, 1);
-        sudokuGrid->setColumnStretch(i, 1);
+    // Calcoliamo i margini necessari per centrare il quadrato
+    int margineX = (gSize.width() - lato) / 2;
+    int margineY = (gSize.height() - lato) / 2;
+
+    // 2. Applichiamo i margini alla GRIGLIA (per farla quadrata)
+    if (gridWidget->layout()) {
+        gridWidget->layout()->setContentsMargins(margineX, margineY, margineX, margineY);
     }
 
-    QRegularExpression rx("^[1-9]$");
-    QValidator *validator = new QRegularExpressionValidator(rx, this);
-
-    for (unsigned short row = 0; row < size; row++){
-        for (unsigned short col = 0; col < size; col++){
-            QLineEdit *cell = new QLineEdit;
-
-            cell->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
-            cell->setMinimumSize(30, 30);
-            cell->setAlignment(Qt::AlignCenter);
-            cell->setMaxLength(1);
-            cell->setFont(font);
-            cell->setValidator(validator);
-
-            cell->setProperty("row", row);
-            cell->setProperty("col", col);
-
-            // --- CONNESSIONE PER INPUT DA TASTIERA ---
-            // Quando il testo è modificato (dopo la validazione), chiamiamo la funzione di gestione
-            connect(cell, &QLineEdit::textEdited, this, [this, row, col](const QString &text) {
-                this->handleCellInput(row, col, text);
-            });
-
-            // --- CONNESSIONE PER TRACCIARE LA SELEZIONE ---
-            // Quando la cella ottiene il focus
-            connect(cell, &QLineEdit::editingFinished, this, [this, cell](){
-                // Usiamo editingFinished come un modo per reagire dopo che la cella perde il focus,
-                // ma per tracciare la selezione usiamo focusInEvent se fosse disponibile.
-                // Per la semplicità di un QLineEdit, basta tracciare quale ha il focus.
-            });
-
-            //connect(cell, &QLineEdit::textChanged, this, [this, row, col](const QString &text){});
-            // Per tracciare la cella selezionata, usiamo un Event Filter (vedi nota sotto)
-            // o sovrascriviamo l'evento, ma qui usiamo l'event filter più semplice.
-            cell->installEventFilter(this);
-
-            QString style = "QLineEdit { "
-                            "background-color: white; "
-                            "border: 1px solid #c0c0c0; "
-                            "color: #333; "
-                            "}"
-                            "QLineEdit:focus {"
-                            "    border: 2px solid #0078d4;"
-                            "    background-color: #e3f2fd;"
-                            "}";
-
-            if (col % 3 == 2) style.append("QLineEdit { border-right: 2px solid black; }");
-            if (row % 3 == 2) style.append("QLineEdit { border-bottom: 2px solid black; }");
-
-            cell->setStyleSheet(style);
-            sudokuGrid->addWidget(cell, row, col);
-
-            cells[row][col] = cell;
-
-            solver->insert(cell->text().toUShort(), row, col);
-        }
+    // 3. Applichiamo gli STESSI margini orizzontali al PANNELLO OPZIONI
+    // In questo modo, il pannello sotto inizia e finisce esattamente dove finisce la griglia sopra.
+    // I margini verticali (10, 10) li teniamo fissi per estetica.
+    if (optionPanel->layout()) {
+        optionPanel->layout()->setContentsMargins(margineX, 10, margineX, 10);
     }
-    return gridPanel;
 }
 
 // --- Funzione per tracciare la cella selezionata ---
@@ -195,9 +150,9 @@ bool MainWindow::eventFilter(QObject *watched, QEvent *event) {
     return false;
 }
 
-
+// === Slots ===
 // --- GESTIONE INPUT DA TASTIERA ---
-void MainWindow::handleCellInput(int row, int col, const QString &text) {
+void MainWindow::handleCellInput(unsigned short row, unsigned short col, const QString &text) {
     unsigned short val = text.isEmpty() ? 0 : text.toUShort();
 
     if (val == 0) {
@@ -215,30 +170,99 @@ void MainWindow::handleCellInput(int row, int col, const QString &text) {
     // solver->printGrid();
 }
 
-// --- QUESTA È LA FUNZIONE CHIAVE PER L'ALLINEAMENTO ---
-void MainWindow::resizeEvent(QResizeEvent *event)  {
-    QMainWindow::resizeEvent(event);
-    if (!gridWidget || !optionPanel) return;
+// === UI setup helpers ===
+QWidget* MainWindow::setupGrid(const unsigned short &size){
+    QWidget* gridPanel = new QWidget(this);
+    QGridLayout* sudokuGrid = new QGridLayout(gridPanel);
 
-    // 1. Calcoliamo la geometria quadrata basandoci SOLO sulla griglia (Master)
-    QSize gSize = gridWidget->size();
-    int lato = qMin(gSize.width(), gSize.height());
+    sudokuGrid->setSpacing(0);
+    sudokuGrid->setContentsMargins(0, 0, 0, 0);
 
-    // Calcoliamo i margini necessari per centrare il quadrato
-    int margineX = (gSize.width() - lato) / 2;
-    int margineY = (gSize.height() - lato) / 2;
-
-    // 2. Applichiamo i margini alla GRIGLIA (per farla quadrata)
-    if (gridWidget->layout()) {
-        gridWidget->layout()->setContentsMargins(margineX, margineY, margineX, margineY);
+    for (unsigned short i = 0; i < size; ++i) {
+        sudokuGrid->setRowStretch(i, 1);
+        sudokuGrid->setColumnStretch(i, 1);
     }
 
-    // 3. Applichiamo gli STESSI margini orizzontali al PANNELLO OPZIONI
-    // In questo modo, il pannello sotto inizia e finisce esattamente dove finisce la griglia sopra.
-    // I margini verticali (10, 10) li teniamo fissi per estetica.
-    if (optionPanel->layout()) {
-        optionPanel->layout()->setContentsMargins(margineX, 10, margineX, 10);
+    QRegularExpression rx("^[1-9]$");
+    QValidator *validator = new QRegularExpressionValidator(rx, this);
+
+    for (unsigned short row = 0; row < size; row++){
+        for (unsigned short col = 0; col < size; col++){
+            QLineEdit *cell = new QLineEdit;
+
+            cell->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
+            cell->setMinimumSize(30, 30);
+            cell->setAlignment(Qt::AlignCenter);
+            cell->setMaxLength(1);
+            cell->setFont(font);
+            cell->setValidator(validator);
+
+            cell->setProperty("row", row);
+            cell->setProperty("col", col);
+
+            // --- CONNESSIONE PER INPUT DA TASTIERA ---
+            // Quando il testo è modificato (dopo la validazione), chiamiamo la funzione di gestione
+            connect(cell, &QLineEdit::textEdited, this, [this, row, col](const QString &text) {
+                this->handleCellInput(row, col, text);
+            });
+
+            // --- CONNESSIONE PER TRACCIARE LA SELEZIONE ---
+            // Quando la cella ottiene il focus
+            connect(cell, &QLineEdit::editingFinished, this, [](){
+                // Usiamo editingFinished come un modo per reagire dopo che la cella perde il focus,
+                // ma per tracciare la selezione usiamo focusInEvent se fosse disponibile.
+                // Per la semplicità di un QLineEdit, basta tracciare quale ha il focus.
+            });
+
+            //connect(cell, &QLineEdit::textChanged, this, [this, row, col](const QString &text){});
+            // Per tracciare la cella selezionata, usiamo un Event Filter (vedi nota sotto)
+            // o sovrascriviamo l'evento, ma qui usiamo l'event filter più semplice.
+            cell->installEventFilter(this);
+
+            QString style = "QLineEdit { "
+                            "background-color: white; "
+                            "border: 1px solid #c0c0c0; "
+                            "color: #333; "
+                            "}"
+                            "QLineEdit:focus {"
+                            "    border: 2px solid #0078d4;"
+                            "    background-color: #e3f2fd;"
+                            "}";
+
+            if (col % 3 == 2) style.append("QLineEdit { border-right: 2px solid black; }");
+            if (row % 3 == 2) style.append("QLineEdit { border-bottom: 2px solid black; }");
+
+            cell->setStyleSheet(style);
+            sudokuGrid->addWidget(cell, row, col);
+
+            cells[row][col] = cell;
+
+            solver->insert(cell->text().toUShort(), row, col);
+        }
     }
+    return gridPanel;
+}
+
+QWidget* MainWindow::setupOptionsPanel(const unsigned short &size){
+    QWidget* lowPanel = new QWidget(this);
+
+    QHBoxLayout* lowLayout = new QHBoxLayout(lowPanel);
+
+    // I margini verranno sovrascritti da resizeEvent, ma ne impostiamo uno base
+    lowLayout->setContentsMargins(10, 10, 10, 10);
+    lowLayout->setSpacing(20);
+
+    numberPad = setupNumberPad(size);
+
+    // Stretch 1 per il tastierino
+    lowLayout->addWidget(numberPad, 1);
+
+    QWidget* options = setupButtons();
+
+    // Stretch 1 per i bottoni
+    lowLayout->addWidget(options, 1);
+
+    return lowPanel;
 }
 
 QWidget* MainWindow::setupNumberPad(const unsigned short &size)
@@ -269,28 +293,6 @@ QWidget* MainWindow::setupNumberPad(const unsigned short &size)
     return padContainer;
 }
 
-QWidget* MainWindow::setupOptionsPanel(const unsigned short &size){
-    QWidget* lowPanel = new QWidget(this);
-
-    QHBoxLayout* lowLayout = new QHBoxLayout(lowPanel);
-
-    // I margini verranno sovrascritti da resizeEvent, ma ne impostiamo uno base
-    lowLayout->setContentsMargins(10, 10, 10, 10);
-    lowLayout->setSpacing(20);
-
-    numberPad = setupNumberPad(size);
-
-    // Stretch 1 per il tastierino
-    lowLayout->addWidget(numberPad, 1);
-
-    QWidget* options = setupButtons();
-
-    // Stretch 1 per i bottoni
-    lowLayout->addWidget(options, 1);
-
-    return lowPanel;
-}
-
 QWidget* MainWindow::setupButtons(){
     QWidget* btnContainer = new QWidget();
 
@@ -319,6 +321,7 @@ QWidget* MainWindow::setupButtons(){
     return btnContainer;
 }
 
+// === Actions / handlers ===
 void MainWindow::askResetCells(){
     QMessageBox::StandardButton reply = QMessageBox::warning(this, "Attenzione",
                                                              "Ripristinare tutta la griglia?",
@@ -350,8 +353,8 @@ void MainWindow::askSolve(){
 
 void MainWindow::solveSequence()
 {
-    for (int i = 0; i < dim; i++)
-        for (int j = 0; j < dim; j++)
+    for (unsigned short i = 0; i < dim; i++)
+        for (unsigned short j = 0; j < dim; j++)
             cells[i][j]->setReadOnly(true);
 
     QThread* thread = new QThread;
@@ -367,13 +370,13 @@ void MainWindow::solveSequence()
                 qDebug() << "Solver terminato, risultato:" << ok;
 
                 // aggiorna griglia completa
-                for (int r = 0; r < dim; ++r)
-                    for (int c = 0; c < dim; ++c)
+                for (unsigned short r = 0; r < dim; ++r)
+                    for (unsigned short c = 0; c < dim; ++c)
                         cells[r][c]->setText(QString::number(solver->get(r, c)));
 
                 // sblocca GUI
-                for (int r = 0; r < dim; ++r)
-                    for (int c = 0; c < dim; ++c)
+                for (unsigned short r = 0; r < dim; ++r)
+                    for (unsigned short c = 0; c < dim; ++c)
                         cells[r][c]->setReadOnly(false);
 
                 // pulizia thread/worker
@@ -401,20 +404,19 @@ void MainWindow::solveSequence()
     startProgressMonitor();
 }
 
-
 void MainWindow::startProgressMonitor()
 {
     // usa il membro lastCoordsSize (non statico), così si resetta tra esecuzioni
     QTimer* timer = new QTimer(this);
 
     connect(timer, &QTimer::timeout, this, [this, timer]() {
-        int size = solver->coordsSize();
+        size_t size = solver->coordsSize();
 
 
         if (size > lastCoordsSize) {
-            for (int k = lastCoordsSize; k < size; ++k) {
+            for (unsigned short k = lastCoordsSize; k < size; ++k) {
                 auto [r, c] = solver->coordAt(k);
-                int v = solver->get(r, c);
+                unsigned short v = solver->get(r, c);
                 cells[r][c]->setText(QString::number(v));
                 qDebug() << "Aggiornata cella:" << r << c << " = " << v;
             }
@@ -436,7 +438,7 @@ void MainWindow::handleNumberPadInput(unsigned short val)
     // Se non c'è una cella selezionata, proviamo a selezionare la prima con il focus
     if (!selectedCell) {
         QWidget *fw = QApplication::focusWidget();
-        QLineEdit *fe = qobject_cast<QLineEdit*>(fw);
+        auto *fe = qobject_cast<QLineEdit*>(fw);
         if (fe) selectedCell = fe;
     }
 
