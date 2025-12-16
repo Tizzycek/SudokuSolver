@@ -250,7 +250,7 @@ QWidget* MainWindow::setupNumberPad(const unsigned short &size)
     padLayout->setSpacing(0);
     padLayout->setContentsMargins(0, 0, 0, 0);
 
-    for (unsigned short i = 0; i < size; ++i) {
+    for (unsigned short i = 0; i < std::sqrt(size); ++i) {
         padLayout->setRowStretch(i, 1);
         padLayout->setColumnStretch(i, 1);
     }
@@ -263,6 +263,7 @@ QWidget* MainWindow::setupNumberPad(const unsigned short &size)
         numBtn->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
         numBtn->setMinimumSize(30, 30);
         //numBtn->setFont(font);
+        numBtn->setFont(QFont("Arial", 25, QFont::Bold));
         padLayout->addWidget(numBtn, (i-1)/3, (i-1)%3);
     }
     return padContainer;
