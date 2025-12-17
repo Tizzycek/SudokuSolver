@@ -104,6 +104,13 @@ void MainWindow::resizeEvent(QResizeEvent *event)  {
 
 // --- Funzione per tracciare la cella selezionata ---
 bool MainWindow::eventFilter(QObject *watched, QEvent *event) {
+    if (event->type() == QEvent::FocusIn) {
+        if (auto *edit = qobject_cast<QLineEdit*>(watched)) {
+            selectedCell = edit;
+        }
+        return false;
+    }
+
     if (event->type() == QEvent::KeyPress) {
 
         QKeyEvent* keyEvent = static_cast<QKeyEvent*>(event);
@@ -182,8 +189,6 @@ void MainWindow::handleCellInput(unsigned short row, unsigned short col, const Q
             cells[row][col]->clear();
         }
     }
-    // Esegui la stampa della griglia del solver per debug
-    // solver->printGrid();
 }
 
 // === UI setup helpers ===
@@ -230,7 +235,7 @@ QWidget* MainWindow::setupGrid(const unsigned short &size){
                 // Per la semplicità di un QLineEdit, basta tracciare quale ha il focus.
             });
 
-            //connect(cell, &QLineEdit::textChanged, this, [this, row, col](const QString &text){});
+            connect(cell, &QLineEdit::textChanged, this, [this, row, col](const QString &text){});
             // Per tracciare la cella selezionata, usiamo un Event Filter (vedi nota sotto)
             // o sovrascriviamo l'evento, ma qui usiamo l'event filter più semplice.
             cell->installEventFilter(this);
@@ -314,10 +319,6 @@ QWidget* MainWindow::setupButtons(){
 
     QVBoxLayout* btnLayout = new QVBoxLayout(btnContainer);
 
-    // RIMOSSO: btnLayout->setAlignment(Qt::AlignCenter);
-    // Togliendo l'allineamento forzato, i pulsanti si espanderanno orizzontalmente
-    // per riempire tutto lo spazio concesso dal layout padre (che è limitato dai margini).
-
     QPushButton* reset = new QPushButton(tr("Ripristina"));
     reset->setFont(QFont("Arial", 14));
     reset->setMinimumHeight(50);
@@ -348,10 +349,25 @@ void MainWindow::askResetCells(){
 }
 
 void MainWindow::resetCells(){
+
     for (unsigned short i = 0; i < dim; i++){
         for (unsigned short j = 0; j < dim; j++) {
+            QString style = "QLineEdit { "
+                            "background-color: white; "
+                            "border: 1px solid #c0c0c0; "
+                            "color: #333; "
+                            "}"
+                            "QLineEdit:focus {"
+                            "    border: 2px solid #0078d4;"
+                            "    background-color: #e3f2fd;"
+                            "}";
             if(cells[i][j]) {
                 cells[i][j]->clear();
+                if (j % 3 == 2) style.append("QLineEdit { border-right: 2px solid black; }");
+                if (i % 3 == 2) style.append("QLineEdit { border-bottom: 2px solid black; }");
+                cells[i][j]->setStyleSheet(style);
+                if (cells[i][j]->isReadOnly())
+                    cells[i][j]->setReadOnly(false);
             }
         }
     }
@@ -369,6 +385,15 @@ void MainWindow::askSolve(){
 
 void MainWindow::solveSequence()
 {
+    QString finalStyle = "QLineEdit { "
+        "background-color: #0ABAB5; "
+        "border: 1px solid #c0c0c0; "
+        "color: #333; "
+        "}"
+        "QLineEdit:focus {"
+        "    border: 2px solid #0078d4;"
+        "    background-color: #e3f2fd;"
+        "}";
     // Prepare progress tracking for a new run
     lastCoordsSize = 0;
     if (solver) solver->clearProgress();
@@ -394,14 +419,15 @@ void MainWindow::solveSequence()
                 qDebug() << "Solver terminato, risultato:" << ok;
 
                 // aggiorna griglia completa
-                for (unsigned short r = 0; r < dim; ++r)
-                    for (unsigned short c = 0; c < dim; ++c)
+                for (unsigned short r = 0; r < dim; ++r){
+                    for (unsigned short c = 0; c < dim; ++c){
                         cells[r][c]->setText(QString::number(solver->get(r, c)));
+                        //cells[r][c]->setStyleSheet(finalStyle);
+                    }
+                }
 
                 // sblocca GUI
-                for (unsigned short r = 0; r < dim; ++r)
-                    for (unsigned short c = 0; c < dim; ++c)
-                        cells[r][c]->setReadOnly(false);
+                // si sblocca solo dopo reset
 
                 // pulizia thread/worker
                 thread->quit();
@@ -433,7 +459,17 @@ void MainWindow::startProgressMonitor()
     // usa il membro lastCoordsSize (non statico), così si resetta tra esecuzioni
     QTimer* timer = new QTimer(this);
 
-    connect(timer, &QTimer::timeout, this, [this, timer]() {
+    /*QString solvedColor = "QLineEdit { "
+                          "background-color: #FFD16E; "
+                          "border: 1px solid #c0c0c0; "
+                          "color: #333; "
+                          "}"
+                          "QLineEdit:focus {"
+                          "    border: 2px solid #0078d4;"
+                          "    background-color: #e3f2fd;"
+                          "}";*/
+
+    connect(timer, &QTimer::timeout, this, [this, timer/*, solvedColor*/]() {
         size_t size = solver->coordsSize();
 
 
@@ -442,6 +478,7 @@ void MainWindow::startProgressMonitor()
                 auto [r, c] = solver->coordAt(k);
                 unsigned short v = solver->get(r, c);
                 cells[r][c]->setText(QString::number(v));
+                //cells[r][c]->setStyleSheet(solvedColor);
                 qDebug() << "Aggiornata cella:" << r << c << " = " << v;
             }
             lastCoordsSize = size;
@@ -459,48 +496,25 @@ void MainWindow::startProgressMonitor()
 
 void MainWindow::handleNumberPadInput(unsigned short val)
 {
-    // Se non c'è una cella selezionata, proviamo a selezionare la prima con il focus
-    if (!selectedCell) {
-        QWidget *fw = QApplication::focusWidget();
-        auto *fe = qobject_cast<QLineEdit*>(fw);
-        if (fe) selectedCell = fe;
-    }
-
-    if (!selectedCell) return;  // ancora nulla
-
-    // Mettiamo il focus (assicura che la cella sia attiva)
-    selectedCell->setFocus();
+    if (!selectedCell) return;
 
     unsigned short row = selectedCell->property("row").toInt();
     unsigned short col = selectedCell->property("col").toInt();
 
-    QString s = QString::number(val);
-
-    // Aggiorna GUI (attenzione: setText NON emette textEdited, perciò gestiamo l'inserimento qui)
-    selectedCell->setText(s);
-
-    // Aggiorna solver (stessa logica che usi in handleCellInput)
-    if (solver->isSafe(row, col, val)) {
-        solver->insert(val, row, col);
-        // evidenziamo come valore utente
-        selectedCell->setStyleSheet(selectedCell->styleSheet() + "color: black;");
-    } else {
+    if (!solver->isSafe(row, col, val)) {
         QMessageBox::warning(this, tr("Errore"),
-                             QString(tr("Il numero %1 non è valido in posizione (%2, %3)."))
+                             tr("Il numero %1 non è valido in posizione (%2, %3).")
                                  .arg(val).arg(row+1).arg(col+1));
-        selectedCell->clear();
         return;
     }
 
-    // Opzionale: sposta il focus in avanti
-    unsigned short nextCol = col + 1;
-    unsigned short nextRow = row;
-    if (nextCol >= dim) {
-        nextCol = 0;
-        nextRow = row + 1;
-    }
-    if (nextRow < dim) {
-        cells[nextRow][nextCol]->setFocus();
-        selectedCell = cells[nextRow][nextCol];
-    }
+    selectedCell->setText(QString::number(val));
+    solver->insert(val, row, col);
+
+    // opzionale: focus avanti
+    int nc = col + 1;
+    int nr = row;
+    if (nc >= dim) { nc = 0; nr++; }
+    if (nr < dim) cells[nr][nc]->setFocus();
 }
+
