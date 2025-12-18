@@ -31,7 +31,7 @@ MainWindow::MainWindow(QWidget *parent)
     mainLayout->setContentsMargins(0, 0, 0, 0);
     mainLayout->setSpacing(0);
 
-    dim = 9;
+    dim = 16;
 
     solver = new SudokuSolverAlgorithm(dim);
 
@@ -196,6 +196,8 @@ QWidget* MainWindow::setupGrid(const unsigned short &size){
     QWidget* gridPanel = new QWidget(this);
     QGridLayout* sudokuGrid = new QGridLayout(gridPanel);
 
+    unsigned short sqrt_size = std::sqrt(size);
+
     sudokuGrid->setSpacing(0);
     sudokuGrid->setContentsMargins(0, 0, 0, 0);
 
@@ -204,8 +206,8 @@ QWidget* MainWindow::setupGrid(const unsigned short &size){
         sudokuGrid->setColumnStretch(i, 1);
     }
 
-    QRegularExpression rx("^[1-9]$");
-    QValidator *validator = new QRegularExpressionValidator(rx, this);
+    //QRegularExpression rx("^[1-9]$");
+    //QValidator *validator = new QRegularExpressionValidator(rx, this);
 
     for (unsigned short row = 0; row < size; row++){
         for (unsigned short col = 0; col < size; col++){
@@ -214,9 +216,9 @@ QWidget* MainWindow::setupGrid(const unsigned short &size){
             cell->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
             cell->setMinimumSize(30, 30);
             cell->setAlignment(Qt::AlignCenter);
-            cell->setMaxLength(1);
+            cell->setMaxLength(2);
             cell->setFont(font);
-            cell->setValidator(validator);
+            //cell->setValidator(validator);
 
             cell->setProperty("row", row);
             cell->setProperty("col", col);
@@ -250,8 +252,8 @@ QWidget* MainWindow::setupGrid(const unsigned short &size){
                             "    background-color: #e3f2fd;"
                             "}";
 
-            if (col % 3 == 2) style.append("QLineEdit { border-right: 2px solid black; }");
-            if (row % 3 == 2) style.append("QLineEdit { border-bottom: 2px solid black; }");
+            if (col % sqrt_size == sqrt_size-1) style.append("QLineEdit { border-right: 2px solid black; }");
+            if (row % sqrt_size == sqrt_size-1) style.append("QLineEdit { border-bottom: 2px solid black; }");
 
             cell->setStyleSheet(style);
             sudokuGrid->addWidget(cell, row, col);
@@ -309,7 +311,8 @@ QWidget* MainWindow::setupNumberPad(const unsigned short &size)
         numBtn->setMinimumSize(30, 30);
         //numBtn->setFont(font);
         numBtn->setFont(QFont("Arial", 25, QFont::Bold));
-        padLayout->addWidget(numBtn, (i-1)/3, (i-1)%3);
+        int temp = std::sqrt(size);
+        padLayout->addWidget(numBtn, (i-1)/std::sqrt(size), (i-1)%temp);
     }
     return padContainer;
 }
@@ -363,8 +366,9 @@ void MainWindow::resetCells(){
                             "}";
             if(cells[i][j]) {
                 cells[i][j]->clear();
-                if (j % 3 == 2) style.append("QLineEdit { border-right: 2px solid black; }");
-                if (i % 3 == 2) style.append("QLineEdit { border-bottom: 2px solid black; }");
+                unsigned short sqrt_size = std::sqrt(dim);
+                if (j% sqrt_size == sqrt_size-1) style.append("QLineEdit { border-right: 2px solid black; }");
+                if (i % sqrt_size == sqrt_size-1) style.append("QLineEdit { border-bottom: 2px solid black; }");
                 cells[i][j]->setStyleSheet(style);
                 if (cells[i][j]->isReadOnly())
                     cells[i][j]->setReadOnly(false);

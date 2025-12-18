@@ -35,7 +35,7 @@ qt_add_executable(SudokuSolver
 
 qt_add_translations(
     TARGETS SudokuSolver
-    TS_FILES translations/SudokuSolver_it_IT.ts
+    TS_FILES translations/SudokuSolver_it_IT.ts translations/SudokuSolver_en_GB.ts translations/SudokuSolver_de_DE.ts
 )
 
 # Aggiungi libreria
