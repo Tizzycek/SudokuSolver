@@ -1,0 +1,17 @@
+set(lupdate_project_file "F:/Progetti_Qt/SudokuSolver/CMakeLists.txt")
+set(lupdate_translations "F:/Progetti_Qt/SudokuSolver/SudokuSolver_it_IT.ts")
+set(lupdate_include_paths "")
+set(lupdate_sources "")
+set(lupdate_subproject_count 2)
+
+set(lupdate_subproject1_source_dir "F:/Progetti_Qt/SudokuSolver")
+set(lupdate_subproject1_include_paths "F:/Progetti_Qt/SudokuSolver/SudokuSolver_autogen/include;F:/Qt/6.10.0/mingw_64/include/QtCore;F:/Qt/6.10.0/mingw_64/include;F:/Qt/6.10.0/mingw_64/mkspecs/win32-g++;F:/Qt/6.10.0/mingw_64/include;F:/Qt/6.10.0/mingw_64/include/QtWidgets;F:/Qt/6.10.0/mingw_64/include;F:/Qt/6.10.0/mingw_64/include/QtGui;F:/Qt/6.10.0/mingw_64/include")
+set(lupdate_subproject1_sources "F:/Progetti_Qt/SudokuSolver/SudokuSolver_autogen/mocs_compilation.cpp;main.cpp;mainwindow.h;mainwindow.ui;resizer.tpp;mainwindow.cpp;solverworker.h;solverworker.cpp;F:/Progetti_Qt/SudokuSolver/.qt/rcc/SudokuSolver_translations.qrc;F:/Progetti_Qt/SudokuSolver/SudokuSolver_it_IT.qm;F:/Progetti_Qt/SudokuSolver/.qt/rcc/qrc_SudokuSolver_translations.cpp;F:/Progetti_Qt/SudokuSolver/SudokuSolver_autogen/include/ui_mainwindow.h;F:/Progetti_Qt/SudokuSolver/SudokuSolver_autogen/timestamp;F:/Progetti_Qt/SudokuSolver/SudokuSolver_it_IT.qm.rule;F:/Progetti_Qt/SudokuSolver/.qt/rcc/qrc_SudokuSolver_translations.cpp.rule;F:/Progetti_Qt/SudokuSolver/SudokuSolver_autogen/timestamp.rule")
+set(lupdate_subproject1_excluded "")
+set(lupdate_subproject1_autogen_dir "F:/Progetti_Qt/SudokuSolver/SudokuSolver_autogen")
+
+set(lupdate_subproject2_source_dir "F:/Progetti_Qt/SudokuSolver")
+set(lupdate_subproject2_include_paths "F:/Progetti_Qt/SudokuSolver/libSudokuSolverAlgorithm_autogen/include")
+set(lupdate_subproject2_sources "F:/Progetti_Qt/SudokuSolver/libSudokuSolverAlgorithm_autogen/mocs_compilation.cpp;F:/Progetti_Qt/SudokuSolver/libs/SudokuSolverAlgorithm.cpp;libs/SudokuSolverAlgorithm.h;F:/Progetti_Qt/SudokuSolver/libSudokuSolverAlgorithm_autogen/include/ui_mainwindow.h;F:/Progetti_Qt/SudokuSolver/libSudokuSolverAlgorithm_autogen/timestamp;F:/Progetti_Qt/SudokuSolver/libSudokuSolverAlgorithm_autogen/timestamp.rule")
+set(lupdate_subproject2_excluded "")
+set(lupdate_subproject2_autogen_dir "F:/Progetti_Qt/SudokuSolver/libSudokuSolverAlgorithm_autogen")

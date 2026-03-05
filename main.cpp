@@ -1,38 +1,16 @@
 #include "mainwindow.h"
 
-#include <QApplication>
 #include <QLocale>
-#include <QTranslator>
-
-/*int main(int argc, char *argv[])
-{
-    QApplication a(argc, argv);
-
-    QTranslator translator;
-    const QStringList uiLanguages = QLocale::system().uiLanguages();
-    for (const QString &locale : uiLanguages) {
-        const QString baseName = "SudokuSolver_" + QLocale(locale).name();
-        if (translator.load(":/i18n/" + baseName)) {
-            a.installTranslator(&translator);
-            break;
-        }
-    }
-    MainWindow w;
-    w.show();
-    return a.exec();
-}*/
-
 #include <QApplication>
 #include <QTranslator>
-#include <QLocale>
 #include <QDir>
 #include <QDebug>
 #include <QStandardPaths>
 
-int main(int argc, char *argv[])
-{
-    QApplication a(argc, argv);
+#include "AppManager.h"
+#include "SingleIstance.h"
 
+void installLanguage(const QApplication*a) {
     // Nome dell'applicazione (deve coincidere con i file .qm)
     const QString appName = "SudokuSolver";
 
@@ -63,7 +41,7 @@ int main(int argc, char *argv[])
         QString path3 = QStandardPaths::locate(
             QStandardPaths::AppDataLocation,
             "translations/" + qmFile
-            );
+        );
 
         qDebug() << "Cercando traduzione per:" << locale;
         qDebug() << "  Percorso 1:" << path1;
@@ -102,14 +80,28 @@ int main(int argc, char *argv[])
 
     // 3. Installa il traduttore se trovato
     if (translationLoaded) {
-        a.installTranslator(&translator);
+        a->installTranslator(&translator);
     } else {
         qDebug() << "⚠ Nessuna traduzione trovata, usando inglese/italiano di default";
     }
+}
 
-    // 4. Avvia l'applicazione
-    MainWindow w;
-    w.show();
+int main(int argc, char *argv[])
+{
+    const QApplication a(argc, argv);
 
-    return a.exec();
+    QString appId = "it.tizzycek.sudokusolver";
+    a.setApplicationName("SudokuSolver");
+    a.setApplicationVersion("1.0");
+
+    installLanguage(&a);
+
+    SingleInstance instance(appId);
+    if (!instance.isPrimaryInstance())
+        return 0;
+
+    AppManager manager;
+    manager.start();
+
+    return QApplication::exec();
 }

@@ -1,0 +1,6 @@
+<RCC>
+  <qresource prefix="/i18n">
+    <file alias="SudokuSolver_it_IT.qm">F:/Progetti_Qt/SudokuSolver/SudokuSolver_it_IT.qm</file>
+  </qresource>
+</RCC>
+

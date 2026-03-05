@@ -1,6 +1,7 @@
 #include "mainwindow.h"
 #include "solverworker.h"
 #include "ui_mainwindow.h"
+#include "StartupDialog.h"
 
 #include <QPushButton>
 #include <QLineEdit>
@@ -16,13 +17,15 @@ MainWindow::MainWindow(QWidget *parent)
     , ui(new Ui::MainWindow)
     , solver(nullptr)
 {
+
+    // Qua probabilmente ci devi mettere solo le cose fisse
     ui->setupUi(this);
+
+    font = QFont("Arial", 22, QFont::Bold);
 
     setWindowTitle("SudokuSolver");
     setMinimumSize(600, 700);
     resize(600, 700);
-
-    font = QFont("Arial", 22, QFont::Bold);
 
     centralWidget = new QWidget(this);
     setCentralWidget(centralWidget);
@@ -31,19 +34,7 @@ MainWindow::MainWindow(QWidget *parent)
     mainLayout->setContentsMargins(0, 0, 0, 0);
     mainLayout->setSpacing(0);
 
-    dim = 16;
-
-    solver = new SudokuSolverAlgorithm(dim);
-
-    cells.resize(dim);
-    for(unsigned short i=0; i<dim; ++i) cells[i].resize(dim);
-
-    gridWidget = setupGrid(dim);
-    optionPanel = setupOptionsPanel(dim);
-
-    // Griglia sopra (4 parti), Opzioni sotto (2 parti)
-    mainLayout->addWidget(gridWidget, 4);
-    mainLayout->addWidget(optionPanel, 2);
+    windowContent();
 
     // Usiamo QTimer per forzare un aggiornamento del layout all'avvio
     QTimer::singleShot(0, this, [this](){
@@ -52,12 +43,64 @@ MainWindow::MainWindow(QWidget *parent)
         auto *event = new QResizeEvent(this->size(), QSize());
         QCoreApplication::postEvent(this, event);
     });
+
+    setupMenu();
 }
 
 MainWindow::~MainWindow()
 {
     delete solver;
     delete ui;
+}
+
+void MainWindow::initializeForMode(const int & mode) {
+    dim = mode == 1 ? 9 : 16;
+}
+
+void MainWindow::windowContent() {
+    /*StartupDialog dialog(this);
+    if (dialog.exec() == QDialog::Accepted) {
+        dim = dialog.getSelectedMode() == 1 ? 9 : 16;
+    } else {
+        dim = 0;
+        QApplication::quit();
+    }*/
+
+    solver = new SudokuSolverAlgorithm(dim);
+
+    cells.resize(dim);
+    for(unsigned short i=0; i<dim; ++i)
+        cells[i].resize(dim);
+
+    gridWidget = setupGrid(dim);
+    optionPanel = setupOptionsPanel(dim);
+
+    // Griglia sopra (4 parti), Opzioni sotto (2 parti)
+    mainLayout->addWidget(gridWidget, 4);
+    mainLayout->addWidget(optionPanel, 2);
+}
+
+void MainWindow::setupMenu() {
+    // Crea la barra dei menu
+    QMenu *fileMenu = menuBar()->addMenu("File");
+
+    auto newGameAction = new QAction("Nuova Partita", this);
+    auto *exitAction = new QAction("Esci", this);
+
+    fileMenu->addAction(newGameAction);
+    fileMenu->addSeparator();
+    fileMenu->addAction(exitAction);
+
+    QMenu *gameMenu = menuBar()->addMenu("Gioco");
+    auto *checkAction = new QAction("Controlla", this);
+    auto *hintAction = new QAction("Suggerimento", this);
+
+    gameMenu->addAction(checkAction);
+    gameMenu->addAction(hintAction);
+
+    // Connette i segnali
+    //connect(newGameAction, &QAction::triggered, this, &MainWindow::onNewGame);
+    connect(exitAction, &QAction::triggered, this, &QWidget::close);
 }
 
 // Ensure background thread is stopped on window close
@@ -165,6 +208,17 @@ bool MainWindow::eventFilter(QObject *watched, QEvent *event) {
             }
             return true;
 
+        case Qt::Key_Escape: { // è da rivedere
+            selectedCell = nullptr;
+            clearFocus();
+            return true;
+        }
+
+            case Qt::Key_F1: {  // da sviluppare
+                askSolve();
+                return true;
+            }
+
         default:
             return false;
         }
@@ -207,7 +261,8 @@ QWidget* MainWindow::setupGrid(const unsigned short &size){
     }
 
     //QRegularExpression rx("^[1-9]$");
-    //QValidator *validator = new QRegularExpressionValidator(rx, this);
+    QRegularExpression rx ("^[1-9A-Ga-g]$");
+    QValidator *validator = new QRegularExpressionValidator(rx, this);
 
     for (unsigned short row = 0; row < size; row++){
         for (unsigned short col = 0; col < size; col++){
@@ -216,9 +271,9 @@ QWidget* MainWindow::setupGrid(const unsigned short &size){
             cell->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
             cell->setMinimumSize(30, 30);
             cell->setAlignment(Qt::AlignCenter);
-            cell->setMaxLength(2);
+            cell->setMaxLength(1);
             cell->setFont(font);
-            //cell->setValidator(validator);
+            cell->setValidator(validator);
 
             cell->setProperty("row", row);
             cell->setProperty("col", col);

@@ -13,7 +13,7 @@ project(SudokuSolver LANGUAGES CXX)
 
 # Specifica il percorso della configurazione di Qt
 # DEVI cambiare il percorso in base alla tua installazione di Qt!
-#set(CMAKE_PREFIX_PATH "F:/Qt/6.10.0/mingw_64/lib/cmake")
+set(CMAKE_PREFIX_PATH "F:/Qt/6.10.0/mingw_64/lib/cmake")
 
 find_package(Qt6 6.5 REQUIRED COMPONENTS Core Widgets LinguistTools)
 find_package(Qt6 REQUIRED COMPONENTS Core)
@@ -30,6 +30,12 @@ qt_add_executable(SudokuSolver
     mainwindow.cpp
 
     solverworker.h solverworker.cpp
+        StartupDialog.cpp
+        StartupDialog.h
+        AppManager.cpp
+        AppManager.h
+        SingleIstance.cpp
+        SingleIstance.h
 
 )
 

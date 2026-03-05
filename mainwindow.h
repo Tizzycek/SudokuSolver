@@ -28,6 +28,9 @@ class MainWindow : public QMainWindow
     Q_OBJECT
 
 public:
+    void windowContent();
+
+    void initializeForMode(const int & mode);
     /**
      * @brief Constructs the main window and sets up all UI components.
      * @param parent Optional parent widget.
@@ -36,7 +39,7 @@ public:
     /**
      * @brief Destroys the window and releases owned resources.
      */
-    ~MainWindow();
+    ~MainWindow() override;
 
 protected:
     /**
@@ -67,6 +70,7 @@ private slots:
     void handleCellInput(unsigned short row, unsigned short col, const QString &text);
 
 private:
+    void setupMenu();
     // UI setup helpers
     /**
      * @brief Creates the Sudoku grid widget and populates it with editable cells.
@@ -92,7 +96,7 @@ private:
      */
     QWidget* setupButtons();
 
-    template <class T>
+    //template <class T>
     /**
      * @brief Resizes the grid cells proportionally to keep the board readable.
      *
@@ -100,7 +104,7 @@ private:
      * @tparam T A Qt layout/container type holding the grid.
      * @param layout The layout/container instance to resize.
      */
-    void resizeGrid(T&);
+    //void resizeGrid(T&);
 
     // Event handlers and actions
     /**
@@ -174,7 +178,5 @@ private:
     unsigned long lastCoordsSize = 0;         // ultima dimensione letta di coords
 
 };
-
-#include "resizer.tpp"
 
 #endif // MAINWINDOW_H
