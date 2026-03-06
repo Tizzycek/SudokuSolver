@@ -35,12 +35,6 @@ qt_add_translations(
     TS_FILES translations/SudokuSolver_it_IT.ts translations/SudokuSolver_en_GB.ts translations/SudokuSolver_de_DE.ts
 )
 
-# Aggiungi libreria
-#add_library(libSudokuSolverAlgorithm SHARED IMPORTED)
-#set_target_properties(libSudokuSolverAlgorithm PROPERTIES
-#    IMPORTED_LOCATION ${CMAKE_SOURCE_DIR}/libs/libSudokuSolverAlgorithm.dll
-#    IMPORTED_IMPLIB ${CMAKE_SOURCE_DIR}/libs/libSudokuSolverAlgorithm.dll.a
-#)
 add_library(libSudokuSolverAlgorithm SHARED ${CMAKE_SOURCE_DIR}/libs/SudokuSolverAlgorithm.cpp
     libs/SudokuSolverAlgorithm.h)
 
@@ -67,11 +61,11 @@ qt_generate_deploy_app_script(
 )
 install(SCRIPT ${deploy_script})
 
-# Copia DLL (Windows)
+# Copia DLL (Windows) nella cartella dell'eseguibile dopo la compilazione
 if(WIN32)
     add_custom_command(TARGET SudokuSolver POST_BUILD
-        COMMAND ${CMAKE_COMMAND} -E copy
-        ${CMAKE_SOURCE_DIR}/libs/libSudokuSolverAlgorithm.dll
-        $<TARGET_FILE_DIR:SudokuSolver>
+            COMMAND ${CMAKE_COMMAND} -E copy_if_different
+            $<TARGET_FILE:libSudokuSolverAlgorithm>
+            $<TARGET_FILE_DIR:SudokuSolver>
     )
 endif()
