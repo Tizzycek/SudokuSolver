@@ -29,21 +29,14 @@
   </component>
   <component name="CMakeSettings" AUTO_RELOAD="true">
     <configurations>
-      <configuration PROFILE_NAME="Debug-MinGW Qt" ENABLED="true" CONFIG_NAME="Debug" TOOLCHAIN_NAME="MinGW Qt" />
+      <configuration PROFILE_NAME="Debug-MinGW Qt" ENABLED="true" CONFIG_NAME="Debug" TOOLCHAIN_NAME="MinGW Qt" GENERATION_OPTIONS="-DCMAKE_PREFIX_PATH=&quot;F:/Qt/6.10.0/mingw_64/lib/cmake&quot;" />
     </configurations>
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="90265e25-62c2-44a8-992b-ff377f1a1742" name="Changes" comment="">
-      <change afterPath="$PROJECT_DIR$/AppManager.cpp" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/AppManager.h" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/SingleIstance.cpp" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/SingleIstance.h" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/StartupDialog.cpp" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/StartupDialog.h" afterDir="false" />
+    <list default="true" id="90265e25-62c2-44a8-992b-ff377f1a1742" name="Changes" comment="Prima di alcune ristrutturazioni da fare">
+      <change beforePath="$PROJECT_DIR$/.idea/QtSettings.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/QtSettings.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/CMakeLists.txt" beforeDir="false" afterPath="$PROJECT_DIR$/CMakeLists.txt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/main.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/main.cpp" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/mainwindow.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/mainwindow.cpp" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/mainwindow.h" beforeDir="false" afterPath="$PROJECT_DIR$/mainwindow.h" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -120,6 +113,11 @@
   }
 }</component>
   <component name="RunManager" selected="CMake Application.SudokuSolver">
+    <configuration default="true" type="CLionExternalRunConfiguration" factoryName="Application" REDIRECT_INPUT="false" ELEVATE="false" USE_EXTERNAL_CONSOLE="false" EMULATE_TERMINAL="false" PASS_PARENT_ENVS_2="true">
+      <method v="2">
+        <option name="CLION.EXTERNAL.BUILD" enabled="true" />
+      </method>
+    </configuration>
     <configuration name="SudokuSolver" type="CMakeRunConfiguration" factoryName="Application" REDIRECT_INPUT="false" ELEVATE="false" USE_EXTERNAL_CONSOLE="false" EMULATE_TERMINAL="false" PASS_PARENT_ENVS_2="true" PROJECT_NAME="SudokuSolver" TARGET_NAME="SudokuSolver" CONFIG_NAME="Debug-MinGW Qt" RUN_TARGET_PROJECT_NAME="SudokuSolver" RUN_TARGET_NAME="SudokuSolver">
       <method v="2">
         <option name="com.jetbrains.cidr.execution.CidrBuildBeforeRunTaskProvider$BuildBeforeRunTask" enabled="true" />
@@ -131,11 +129,6 @@
       </method>
     </configuration>
     <configuration name="SudokuSolver_lupdate" type="CMakeRunConfiguration" factoryName="Application" REDIRECT_INPUT="false" ELEVATE="false" USE_EXTERNAL_CONSOLE="false" EMULATE_TERMINAL="false" PASS_PARENT_ENVS_2="true" PROJECT_NAME="SudokuSolver" TARGET_NAME="SudokuSolver_lupdate" CONFIG_NAME="Debug-MinGW Qt">
-      <method v="2">
-        <option name="com.jetbrains.cidr.execution.CidrBuildBeforeRunTaskProvider$BuildBeforeRunTask" enabled="true" />
-      </method>
-    </configuration>
-    <configuration default="true" type="CMakeRunConfiguration" factoryName="Application" REDIRECT_INPUT="false" ELEVATE="false" USE_EXTERNAL_CONSOLE="false" EMULATE_TERMINAL="false" PASS_PARENT_ENVS_2="true">
       <method v="2">
         <option name="com.jetbrains.cidr.execution.CidrBuildBeforeRunTaskProvider$BuildBeforeRunTask" enabled="true" />
       </method>
@@ -173,8 +166,18 @@
       <updated>1772482791805</updated>
       <workItem from="1772482793649" duration="2485000" />
       <workItem from="1772741244732" duration="1291000" />
-      <workItem from="1772742583694" duration="6766000" />
+      <workItem from="1772742583694" duration="6813000" />
+      <workItem from="1772828139248" duration="410000" />
     </task>
+    <task id="LOCAL-00001" summary="Prima di alcune ristrutturazioni da fare">
+      <option name="closed" value="true" />
+      <created>1772749433089</created>
+      <option name="number" value="00001" />
+      <option name="presentableId" value="LOCAL-00001" />
+      <option name="project" value="LOCAL" />
+      <updated>1772749433089</updated>
+    </task>
+    <option name="localTasksCounter" value="2" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
@@ -184,5 +187,9 @@
     <isAutomaticCheckingOnLaunch value="false" />
     <isAutomaticFoundErrors value="true" />
     <isAutomaticReloadCMake value="true" />
+  </component>
+  <component name="VcsManagerConfiguration">
+    <MESSAGE value="Prima di alcune ristrutturazioni da fare" />
+    <option name="LAST_COMMIT_MESSAGE" value="Prima di alcune ristrutturazioni da fare" />
   </component>
 </project>
